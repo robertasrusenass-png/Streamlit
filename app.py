@@ -37,14 +37,29 @@ def garso_i_teksta(audio_file):
 
     rezultatas = response.json()
 
-    tekstas = (
-        rezultatas["results"]
-        ["channels"][0]
-        ["alternatives"][0]
-        ["transcript"]
+    channel = rezultatas["results"]["channels"][0]
+
+    tekstas = channel["alternatives"][0]["transcript"]
+
+    aptikta_kalba = channel.get(
+            "detected_language",
+            "nežinoma"
+        )
+
+    kalbos_patimumas = channel.get(
+        "language_confidence",
+        0
     )
 
-    return tekstas
+    trukme = rezultatas.get(
+        "metadata",
+        {}
+    ).get(
+        "duration",
+        0
+    )
+
+    return tekstas, aptikta_kalba, kalbos_patimumas, trukme
 
 
 ikeltas_garso_failas = st.file_uploader(
@@ -63,13 +78,24 @@ if ikeltas_garso_failas is not None:
 
             try:
 
-                tekstas = garso_i_teksta(
+                tekstas, kalba, patikimumas, trukme = garso_i_teksta(
                     ikeltas_garso_failas
                 )
 
-                st.session_state["tekstas"] = tekstas
+                st.write(f"Aptikta kalba: **{kalba}**")
+                st.write(f"Kalbos aptikimo patikimumas: **{patikimumas:.2%}**")
+                st.write(f"Garso trukmė: **{trukme:.1f} s**")
+                if tekstas.strip():
 
-                st.success("Transkribavimas baigtas!")
+                    st.session_state["tekstas"] = tekstas
+                    st.success("Transkribavimas baigtas!")
+
+                else:
+
+                    st.warning(
+                        "Deepgram apdorojo failą, "
+                        "bet jame neatpažino kalbos."
+                    )
 
             except Exception as e:
 
