@@ -6,16 +6,36 @@ st.title("Apps'o pavadinimas")
 
 st.write("Įkelkite garso failą transkribavimui.")
 
+kalbos = {
+    "Automatiškai (LT / RU)": "auto",
+    "Lietuvių": "lt",
+    "Rusų": "ru"
+}
+
+pasirinkta_kalba = st.selectbox(
+    "Pasirinkite garso kalbą",
+    list(kalbos.keys())
+)
+
+
 
 def garso_i_teksta(audio_file):
 
     url = "https://api.deepgram.com/v1/listen"
 
-    params = {
-        "model": "nova-3-general",
-        "detect_language": "true",
-        "smart_format": "true"
-}
+    if kalba == "auto":
+        params = [
+            ("model", "nova-3-general"),
+            ("detect_language", "lt"),
+            ("detect_language", "ru"),
+            ("smart_format", "true")
+        ]
+    else:
+        params = {
+            "model": "nova-3-general",
+            "language": kalba,
+            "smart_format": "true"
+        }
 
     headers = {
         "Authorization": f"Token {st.secrets['DEEPGRAM_API_KEY']}",
@@ -78,6 +98,8 @@ if ikeltas_garso_failas is not None:
 
             try:
 
+                kalbos_kodas = kalbos[pasirinkta_kalba]
+                
                 tekstas, kalba, patikimumas, trukme = garso_i_teksta(
                     ikeltas_garso_failas
                 )
