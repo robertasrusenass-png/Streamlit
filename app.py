@@ -19,7 +19,7 @@ pasirinkta_kalba = st.selectbox(
 
 
 
-def garso_i_teksta(audio_file):
+def garso_i_teksta(audio_file, kalba):
 
     url = "https://api.deepgram.com/v1/listen"
 
