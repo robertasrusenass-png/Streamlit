@@ -12,10 +12,10 @@ def garso_i_teksta(audio_file):
     url = "https://api.deepgram.com/v1/listen"
 
     params = {
-        "model": "nova-3",
-        "detect_language": True,
-        "smart_format": True
-    }
+        "model": "nova-3-general",
+        "detect_language": "true",
+        "smart_format": "true"
+}
 
     headers = {
         "Authorization": f"Token {st.secrets['DEEPGRAM_API_KEY']}",
