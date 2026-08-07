@@ -30,7 +30,10 @@ def garso_i_teksta(audio_file):
         timeout=300
     )
 
-    response.raise_for_status()
+    if response.status_code != 200:
+        raise Exception(
+        f"Deepgram klaida {response.status_code}: {response.text}"
+        )
 
     rezultatas = response.json()
 
