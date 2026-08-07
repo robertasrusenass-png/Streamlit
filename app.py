@@ -101,7 +101,8 @@ if ikeltas_garso_failas is not None:
                 kalbos_kodas = kalbos[pasirinkta_kalba]
                 
                 tekstas, kalba, patikimumas, trukme = garso_i_teksta(
-                    ikeltas_garso_failas
+                    ikeltas_garso_failas,
+                    kalbos_kodas
                 )
 
                 st.write(f"Aptikta kalba: **{kalba}**")
