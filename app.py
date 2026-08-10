@@ -1,11 +1,8 @@
 import streamlit as st
 import requests
-import os
-import tempfile
 import time
 
 
-DEBUG = True
 # ==================================================
 # PUSLAPIS
 # ==================================================
@@ -16,25 +13,11 @@ st.write("Įkelkite garso failą transkribavimui.")
 
 
 # ==================================================
-# VARIKLIO PASIRINKIMAS
-# ==================================================
-
-variklis = st.radio(
-    "Transkribavimo variklis",
-    [
-        "Deepgram Nova-3",
-        "Whisper large-v3",
-        "Abu – palyginti"
-    ]
-)
-
-
-# ==================================================
 # KALBOS PASIRINKIMAS
 # ==================================================
 
 kalbos = {
-    "Automatiškai": "auto",
+    "Automatiškai (LT / RU)": "auto",
     "Lietuvių": "lt",
     "Rusų": "ru"
 }
@@ -46,10 +29,10 @@ pasirinkta_kalba = st.selectbox(
 
 
 # ==================================================
-# DEEPGRAM
+# DEEPGRAM TRANSKRIBAVIMAS
 # ==================================================
 
-def deepgram_garso_i_teksta(audio_file, kalba):
+def garso_i_teksta(audio_file, kalba):
 
     url = "https://api.deepgram.com/v1/listen"
 
@@ -71,8 +54,7 @@ def deepgram_garso_i_teksta(audio_file, kalba):
         }
 
     headers = {
-        "Authorization":
-            f"Token {st.secrets['DEEPGRAM_API_KEY']}",
+        "Authorization": f"Token {st.secrets['DEEPGRAM_API_KEY']}",
         "Content-Type": audio_file.type
     }
 
@@ -86,9 +68,7 @@ def deepgram_garso_i_teksta(audio_file, kalba):
         timeout=300
     )
 
-    apdorojimo_laikas = (
-        time.perf_counter() - pradzia
-    )
+    apdorojimo_laikas = time.perf_counter() - pradzia
 
     if response.status_code != 200:
 
@@ -100,26 +80,21 @@ def deepgram_garso_i_teksta(audio_file, kalba):
 
     rezultatas = response.json()
 
-    channel = (
-        rezultatas["results"]["channels"][0]
-    )
+    channel = rezultatas["results"]["channels"][0]
 
-    alternative = (
-        channel["alternatives"][0]
-    )
+    alternative = channel["alternatives"][0]
 
     tekstas = alternative.get(
         "transcript",
         ""
     )
 
-    transkripcijos_patikimumas = (
-        alternative.get(
-            "confidence",
-            None
-        )
+    transkripcijos_patikimumas = alternative.get(
+        "confidence",
+        None
     )
 
+    # Automatinio kalbos aptikimo rezultatai
     if kalba == "auto":
 
         aptikta_kalba = channel.get(
@@ -145,273 +120,14 @@ def deepgram_garso_i_teksta(audio_file, kalba):
         0
     )
 
-    return {
-        "tekstas": tekstas,
-        "kalba": aptikta_kalba,
-        "kalbos_patikimumas":
-            kalbos_patikimumas,
-        "transkripcijos_patikimumas":
-            transkripcijos_patikimumas,
-        "trukme": trukme,
-        "apdorojimo_laikas":
-            apdorojimo_laikas
-    }
-
-
-# ==================================================
-# WHISPER LARGE-V3
-# ==================================================
-
-@st.cache_resource
-def uzkrauti_whisper_modeli():
-
-    from faster_whisper import WhisperModel
-
-    return WhisperModel(
-        "small",
-        device="cpu",
-        compute_type="int8"
+    return (
+        tekstas,
+        aptikta_kalba,
+        kalbos_patikimumas,
+        transkripcijos_patikimumas,
+        trukme,
+        apdorojimo_laikas
     )
-
-
-def whisper_garso_i_teksta(
-    audio_file,
-    kalba
-):
-
-    modelis = uzkrauti_whisper_modeli()
-
-    failo_galune = os.path.splitext(
-        audio_file.name
-    )[1]
-
-    with tempfile.NamedTemporaryFile(
-        delete=False,
-        suffix=failo_galune
-    ) as temp_file:
-
-        temp_file.write(
-            audio_file.getvalue()
-        )
-
-        temp_kelias = temp_file.name
-
-    try:
-
-        if kalba == "auto":
-            whisper_kalba = None
-        else:
-            whisper_kalba = kalba
-
-        pradzia = time.perf_counter()
-
-        segments, info = modelis.transcribe(
-
-            temp_kelias,
-
-            language=whisper_kalba,
-
-            task="transcribe",
-
-            # Kokybei
-            beam_size=5,
-
-            temperature=0.0,
-
-            condition_on_previous_text=True,
-
-            # Žodžių probabilities
-            word_timestamps=True,
-
-            # Kad nedarytų problemų dainoms
-            vad_filter=False
-        )
-
-        # Transkripcija realiai atliekama
-        # iteruojant generatorių
-        segments = list(segments)
-
-        apdorojimo_laikas = (
-            time.perf_counter() - pradzia
-        )
-
-
-        # ------------------------------------------
-        # TEKSTAS
-        # ------------------------------------------
-
-        teksto_dalys = []
-
-        for segmentas in segments:
-
-            segment_text = (
-                segmentas.text.strip()
-            )
-
-            if segment_text:
-
-                teksto_dalys.append(
-                    segment_text
-                )
-
-        visas_tekstas = " ".join(
-            teksto_dalys
-        )
-
-
-        # ------------------------------------------
-        # VIDUTINĖ ŽODŽIŲ TIKIMYBĖ
-        # ------------------------------------------
-
-        zodziu_patikimumai = []
-
-        for segmentas in segments:
-
-            if segmentas.words:
-
-                for zodis in segmentas.words:
-
-                    if (
-                        zodis.probability
-                        is not None
-                    ):
-
-                        zodziu_patikimumai.append(
-                            zodis.probability
-                        )
-
-        if zodziu_patikimumai:
-
-            transkripcijos_patikimumas = (
-                sum(zodziu_patikimumai)
-                /
-                len(zodziu_patikimumai)
-            )
-
-        else:
-
-            transkripcijos_patikimumas = None
-
-
-        return {
-            "tekstas":
-                visas_tekstas,
-
-            "kalba":
-                info.language,
-
-            "kalbos_patikimumas":
-                info.language_probability,
-
-            "transkripcijos_patikimumas":
-                transkripcijos_patikimumas,
-
-            "trukme":
-                info.duration,
-
-            "apdorojimo_laikas":
-                apdorojimo_laikas
-        }
-
-    finally:
-
-        if os.path.exists(temp_kelias):
-            os.remove(temp_kelias)
-
-
-# ==================================================
-# REZULTATO RODYMAS
-# ==================================================
-
-def rodyti_rezultata(
-    pavadinimas,
-    rezultatas,
-    kalbos_kodas,
-    download_key
-):
-    if DEBUG:
-        st.subheader(pavadinimas)
-
-        if rezultatas is None:
-            return
-
-        if kalbos_kodas == "auto":
-
-            st.write(
-                f"Aptikta kalba: "
-                f"**{rezultatas['kalba']}**"
-            )
-
-            if (
-                rezultatas[
-                    "kalbos_patikimumas"
-                ]
-                is not None
-            ):
-
-                st.write(
-                    "Kalbos aptikimo "
-                    "patikimumas: "
-                    f"**{rezultatas['kalbos_patikimumas']:.2%}**"
-                )
-
-        else:
-
-            st.write(
-                f"Pasirinkta kalba: "
-                f"**{kalbos_kodas}**"
-            )
-
-        if (
-            rezultatas[
-                "transkripcijos_patikimumas"
-            ]
-            is not None
-        ):
-
-            st.write(
-                "Modelio patikimumo rodiklis: "
-                f"**{rezultatas['transkripcijos_patikimumas']:.2%}**"
-            )
-
-        st.write(
-            f"Garso trukmė: "
-            f"**{rezultatas['trukme']:.1f} s**"
-        )
-
-        st.write(
-            f"Transkribavimo laikas: "
-            f"**{rezultatas['apdorojimo_laikas']:.1f} s**"
-        )
-
-        tekstas = rezultatas["tekstas"]
-
-        if tekstas.strip():
-
-            st.text_area(
-                "Transkribuotas tekstas",
-                value=tekstas,
-                height=400,
-                key=f"text_{download_key}"
-            )
-
-            st.download_button(
-                "Atsisiųsti tekstą",
-                data=tekstas,
-                file_name=(
-                    f"transkriptas_"
-                    f"{download_key}.txt"
-                ),
-                mime="text/plain",
-                key=f"download_{download_key}"
-            )
-
-        else:
-
-            st.warning(
-                "Modelis apdorojo failą, "
-                "bet neatpažino teksto."
-            )
 
 
 # ==================================================
@@ -439,218 +155,121 @@ if ikeltas_garso_failas is not None:
         type="primary"
     ):
 
-        kalbos_kodas = kalbos[
-            pasirinkta_kalba
-        ]
+        with st.spinner(
+            "Garso failas transkribuojamas..."
+        ):
 
-        st.session_state[
-            "deepgram_rezultatas"
-        ] = None
+            try:
 
-<<<<<<< HEAD
-        st.session_state[
-            "whisper_rezultatas"
-        ] = None
+                kalbos_kodas = kalbos[
+                    pasirinkta_kalba
+                ]
 
-        st.session_state[
-            "deepgram_klaida"
-        ] = None
-
-        st.session_state[
-            "whisper_klaida"
-        ] = None
-
-
-        # ==========================================
-        # DEEPGRAM
-        # ==========================================
-
-        if variklis in [
-            "Deepgram Nova-3",
-            "Abu – palyginti"
-        ]:
-
-            with st.spinner(
-                "Deepgram transkribuoja..."
-            ):
-=======
-                kalbos_kodas = kalbos[pasirinkta_kalba]
-                
-                tekstas, kalba, transkripcijos_patikimumas, trukme = garso_i_teksta(
+                (
+                    tekstas,
+                    kalba,
+                    kalbos_patikimumas,
+                    transkripcijos_patikimumas,
+                    trukme,
+                    apdorojimo_laikas
+                ) = garso_i_teksta(
                     ikeltas_garso_failas,
                     kalbos_kodas
                 )
 
-                st.write(f"Aptikta kalba: **{kalba}**")
-                st.write(f"Kalbos aptikimo patikimumas: **{transkripcijos_patikimumas:.2%}**")
-                st.write(f"Garso trukmė: **{trukme:.1f} s**")
+
+                # ==========================================
+                # INFORMACIJA
+                # ==========================================
+
+                if kalbos_kodas == "auto":
+
+                    st.write(
+                        f"Aptikta kalba: "
+                        f"**{kalba}**"
+                    )
+
+                    if kalbos_patikimumas is not None:
+
+                        st.write(
+                            "Kalbos aptikimo patikimumas: "
+                            f"**{kalbos_patikimumas:.2%}**"
+                        )
+
+                else:
+
+                    kalbos_pavadinimai = {
+                        "lt": "Lietuvių",
+                        "ru": "Rusų"
+                    }
+
+                    st.write(
+                        "Pasirinkta kalba: "
+                        f"**{kalbos_pavadinimai.get(kalbos_kodas, kalbos_kodas)}**"
+                    )
+
+
+                if transkripcijos_patikimumas is not None:
+
+                    st.write(
+                        "Transkripcijos patikimumas: "
+                        f"**{transkripcijos_patikimumas:.2%}**"
+                    )
+
+
+                st.write(
+                    f"Garso trukmė: "
+                    f"**{trukme:.1f} s**"
+                )
+
+                st.write(
+                    f"Transkribavimo laikas: "
+                    f"**{apdorojimo_laikas:.1f} s**"
+                )
+
+
+                # ==========================================
+                # REZULTATAS
+                # ==========================================
+
                 if tekstas.strip():
->>>>>>> parent of 74dc10e (Update app.py)
 
-                try:
+                    st.session_state["tekstas"] = tekstas
 
-                    st.session_state[
-                        "deepgram_rezultatas"
-                    ] = deepgram_garso_i_teksta(
-                        ikeltas_garso_failas,
-                        kalbos_kodas
+                    st.success(
+                        "Transkribavimas baigtas!"
                     )
 
-                except Exception as e:
+                else:
 
-                    st.session_state[
-                        "deepgram_klaida"
-                    ] = str(e)
-
-
-        # ==========================================
-        # WHISPER
-        # ==========================================
-
-        if variklis in [
-            "Whisper large-v3",
-            "Abu – palyginti"
-        ]:
-
-            with st.spinner(
-                "Whisper large-v3 "
-                "transkribuoja..."
-            ):
-
-                try:
-
-                    st.session_state[
-                        "whisper_rezultatas"
-                    ] = whisper_garso_i_teksta(
-                        ikeltas_garso_failas,
-                        kalbos_kodas
+                    st.warning(
+                        "Deepgram apdorojo failą, "
+                        "bet neatpažino teksto."
                     )
 
-                except Exception as e:
 
-                    st.session_state[
-                        "whisper_klaida"
-                    ] = str(e)
+            except Exception as e:
+
+                st.error(
+                    f"Įvyko klaida: {e}"
+                )
 
 
 # ==================================================
-# REZULTATŲ RODYMAS
+# TRANSKRIPTO RODYMAS
 # ==================================================
 
-if variklis == "Abu – palyginti":
+if "tekstas" in st.session_state:
 
-    col1, col2 = st.columns(2)
+    st.text_area(
+        "Transkribuotas tekstas",
+        value=st.session_state["tekstas"],
+        height=400
+    )
 
-    with col1:
-
-        if st.session_state.get(
-            "deepgram_klaida"
-        ):
-
-            st.error(
-                "Deepgram klaida: "
-                + st.session_state[
-                    "deepgram_klaida"
-                ]
-            )
-
-        elif st.session_state.get(
-            "deepgram_rezultatas"
-        ):
-
-            rodyti_rezultata(
-                "Deepgram Nova-3",
-                st.session_state[
-                    "deepgram_rezultatas"
-                ],
-                kalbos[
-                    pasirinkta_kalba
-                ],
-                "deepgram"
-            )
-
-    with col2:
-
-        if st.session_state.get(
-            "whisper_klaida"
-        ):
-
-            st.error(
-                "Whisper klaida: "
-                + st.session_state[
-                    "whisper_klaida"
-                ]
-            )
-
-        elif st.session_state.get(
-            "whisper_rezultatas"
-        ):
-
-            rodyti_rezultata(
-                "Whisper large-v3",
-                st.session_state[
-                    "whisper_rezultatas"
-                ],
-                kalbos[
-                    pasirinkta_kalba
-                ],
-                "whisper"
-            )
-
-
-elif variklis == "Deepgram Nova-3":
-
-    if st.session_state.get(
-        "deepgram_klaida"
-    ):
-
-        st.error(
-            "Deepgram klaida: "
-            + st.session_state[
-                "deepgram_klaida"
-            ]
-        )
-
-    elif st.session_state.get(
-        "deepgram_rezultatas"
-    ):
-
-        rodyti_rezultata(
-            "Deepgram Nova-3",
-            st.session_state[
-                "deepgram_rezultatas"
-            ],
-            kalbos[
-                pasirinkta_kalba
-            ],
-            "deepgram"
-        )
-
-
-elif variklis == "Whisper large-v3":
-
-    if st.session_state.get(
-        "whisper_klaida"
-    ):
-
-        st.error(
-            "Whisper klaida: "
-            + st.session_state[
-                "whisper_klaida"
-            ]
-        )
-
-    elif st.session_state.get(
-        "whisper_rezultatas"
-    ):
-
-        rodyti_rezultata(
-            "Whisper large-v3",
-            st.session_state[
-                "whisper_rezultatas"
-            ],
-            kalbos[
-                pasirinkta_kalba
-            ],
-            "whisper"
-        )
+    st.download_button(
+        "Atsisiųsti tekstą",
+        data=st.session_state["tekstas"],
+        file_name="transkriptas.txt",
+        mime="text/plain"
+    )
