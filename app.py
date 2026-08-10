@@ -111,13 +111,13 @@ if ikeltas_garso_failas is not None:
 
                 kalbos_kodas = kalbos[pasirinkta_kalba]
                 
-                tekstas, kalba, patikimumas, trukme = garso_i_teksta(
+                tekstas, kalba, transkripcijos_patikimumas, trukme = garso_i_teksta(
                     ikeltas_garso_failas,
                     kalbos_kodas
                 )
 
                 st.write(f"Aptikta kalba: **{kalba}**")
-                st.write(f"Kalbos aptikimo patikimumas: **{patikimumas:.2%}**")
+                st.write(f"Kalbos aptikimo patikimumas: **{transkripcijos_patikimumas:.2%}**")
                 st.write(f"Garso trukmė: **{trukme:.1f} s**")
                 if tekstas.strip():
 
