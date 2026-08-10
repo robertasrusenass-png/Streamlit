@@ -18,13 +18,6 @@ st.write("Įkelkite garso failą transkribavimui.")
 # KALBOS PASIRINKIMAS
 # ==================================================
 
-doc = Document()
-doc.add_paragraph(st.session_state["tekstas"])
-
-buffer = BytesIO()
-doc.save(buffer)
-buffer.seek(0)
-
 kalbos = {
     "Automatiškai (LT / RU)": "auto",
     "Lietuvių": "lt",
