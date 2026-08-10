@@ -167,20 +167,10 @@ def deepgram_garso_i_teksta(audio_file, kalba):
 @st.cache_resource
 def uzkrauti_whisper_modeli():
 
-    # NVIDIA GPU
-    if ctranslate2.get_cuda_device_count() > 0:
-
-        return WhisperModel(
-            "large-v3",
-            device="cuda",
-            compute_type="float16"
-        )
-
-    # CPU
     return WhisperModel(
         "large-v3",
         device="cpu",
-        compute_type="float32"
+        compute_type="int8"
     )
 
 
