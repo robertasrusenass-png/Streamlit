@@ -3,7 +3,6 @@ import requests
 import os
 import tempfile
 import time
-import ctranslate2
 
 from faster_whisper import WhisperModel
 
@@ -168,10 +167,10 @@ def deepgram_garso_i_teksta(audio_file, kalba):
 def uzkrauti_whisper_modeli():
 
     return WhisperModel(
-        "large-v3",
-        device="cpu",
-        compute_type="int8"
-    )
+    "small",
+    device="cpu",
+    compute_type="int8"
+)
 
 
 def whisper_garso_i_teksta(
