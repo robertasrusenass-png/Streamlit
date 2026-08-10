@@ -270,13 +270,21 @@ if ikeltas_garso_failas is not None:
 
 if "tekstas" in st.session_state:
 
-    st.text_area(
-        "Transkribuotas tekstas",
-        value=st.session_state["tekstas"],
-        height=400
+    doc = Document()
+    doc.add_paragraph(st.session_state["tekstas"])
+
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    st.download_button(
+        "Atsisiųsti teksto failą",
+        data=st.session_state["tekstas"],
+        file_name="transkriptas.txt",
+        mime="text/plain",
+        key="download_txt"
     )
 
-    # DOCX
     st.download_button(
         "Atsisiųsti Word dokumentą",
         data=buffer.getvalue(),
@@ -284,14 +292,3 @@ if "tekstas" in st.session_state:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         key="download_docx"
     )
-
-"""
-    # TXT
-    st.download_button(
-        "Atsisiųsti teksto failą",
-        data=tekstas,
-        file_name="transkriptas.txt",
-        mime="text/plain",
-        key="download_txt"
-    )
-"""
