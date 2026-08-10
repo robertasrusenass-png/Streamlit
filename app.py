@@ -9,7 +9,7 @@ from io import BytesIO
 # PUSLAPIS
 # ==================================================
 
-st.title("Apps'o pavadinimas")
+st.title("Audio-to-text")
 
 st.write("Įkelkite garso failą transkribavimui.")
 
@@ -284,7 +284,7 @@ if "tekstas" in st.session_state:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         key="download_docx"
     )
-    
+
 """
     # TXT
     st.download_button(
