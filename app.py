@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import time
+from docx import Document
+from io import BytesIO
 
 
 # ==================================================
@@ -15,6 +17,13 @@ st.write("Įkelkite garso failą transkribavimui.")
 # ==================================================
 # KALBOS PASIRINKIMAS
 # ==================================================
+
+doc = Document()
+doc.add_paragraph(st.session_state["tekstas"])
+
+buffer = BytesIO()
+doc.save(buffer)
+buffer.seek(0)
 
 kalbos = {
     "Automatiškai (LT / RU)": "auto",
@@ -268,8 +277,15 @@ if "tekstas" in st.session_state:
     )
 
     st.download_button(
-        "Atsisiųsti tekstą",
+        "Atsisiųsti teksto failą",
         data=st.session_state["tekstas"],
-        file_name="transkriptas.docx",
+        file_name="transkriptas.txt",
         mime="text/plain"
     )
+
+    st.download_button(
+    "Atsisiųsti Word dokumentą",
+    data=buffer,
+    file_name="transkriptas.docx",
+    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
