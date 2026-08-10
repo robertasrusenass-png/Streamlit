@@ -276,15 +276,6 @@ if "tekstas" in st.session_state:
         height=400
     )
 
-    # TXT
-    st.download_button(
-        "Atsisiųsti teksto failą",
-        data=tekstas,
-        file_name="transkriptas.txt",
-        mime="text/plain",
-        key="download_txt"
-    )
-
     # DOCX
     st.download_button(
         "Atsisiųsti Word dokumentą",
@@ -293,3 +284,14 @@ if "tekstas" in st.session_state:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         key="download_docx"
     )
+    
+"""
+    # TXT
+    st.download_button(
+        "Atsisiųsti teksto failą",
+        data=tekstas,
+        file_name="transkriptas.txt",
+        mime="text/plain",
+        key="download_txt"
+    )
+"""
