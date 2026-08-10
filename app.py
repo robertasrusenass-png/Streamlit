@@ -447,6 +447,7 @@ if ikeltas_garso_failas is not None:
             "deepgram_rezultatas"
         ] = None
 
+<<<<<<< HEAD
         st.session_state[
             "whisper_rezultatas"
         ] = None
@@ -472,6 +473,19 @@ if ikeltas_garso_failas is not None:
             with st.spinner(
                 "Deepgram transkribuoja..."
             ):
+=======
+                kalbos_kodas = kalbos[pasirinkta_kalba]
+                
+                tekstas, kalba, transkripcijos_patikimumas, trukme = garso_i_teksta(
+                    ikeltas_garso_failas,
+                    kalbos_kodas
+                )
+
+                st.write(f"Aptikta kalba: **{kalba}**")
+                st.write(f"Kalbos aptikimo patikimumas: **{transkripcijos_patikimumas:.2%}**")
+                st.write(f"Garso trukmė: **{trukme:.1f} s**")
+                if tekstas.strip():
+>>>>>>> parent of 74dc10e (Update app.py)
 
                 try:
 
