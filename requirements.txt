@@ -1,2 +1,5 @@
 streamlit
 requests
+docx
+time
+io
