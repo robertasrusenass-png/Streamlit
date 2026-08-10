@@ -4,6 +4,8 @@ import os
 import tempfile
 import time
 
+
+DEBUG = True
 # ==================================================
 # PUSLAPIS
 # ==================================================
@@ -327,89 +329,89 @@ def rodyti_rezultata(
     kalbos_kodas,
     download_key
 ):
+    if DEBUG:
+        st.subheader(pavadinimas)
 
-    st.subheader(pavadinimas)
+        if rezultatas is None:
+            return
 
-    if rezultatas is None:
-        return
+        if kalbos_kodas == "auto":
 
-    if kalbos_kodas == "auto":
+            st.write(
+                f"Aptikta kalba: "
+                f"**{rezultatas['kalba']}**"
+            )
 
-        st.write(
-            f"Aptikta kalba: "
-            f"**{rezultatas['kalba']}**"
-        )
+            if (
+                rezultatas[
+                    "kalbos_patikimumas"
+                ]
+                is not None
+            ):
+
+                st.write(
+                    "Kalbos aptikimo "
+                    "patikimumas: "
+                    f"**{rezultatas['kalbos_patikimumas']:.2%}**"
+                )
+
+        else:
+
+            st.write(
+                f"Pasirinkta kalba: "
+                f"**{kalbos_kodas}**"
+            )
 
         if (
             rezultatas[
-                "kalbos_patikimumas"
+                "transkripcijos_patikimumas"
             ]
             is not None
         ):
 
             st.write(
-                "Kalbos aptikimo "
-                "patikimumas: "
-                f"**{rezultatas['kalbos_patikimumas']:.2%}**"
+                "Modelio patikimumo rodiklis: "
+                f"**{rezultatas['transkripcijos_patikimumas']:.2%}**"
             )
 
-    else:
+        st.write(
+            f"Garso trukmė: "
+            f"**{rezultatas['trukme']:.1f} s**"
+        )
 
         st.write(
-            f"Pasirinkta kalba: "
-            f"**{kalbos_kodas}**"
+            f"Transkribavimo laikas: "
+            f"**{rezultatas['apdorojimo_laikas']:.1f} s**"
         )
 
-    if (
-        rezultatas[
-            "transkripcijos_patikimumas"
-        ]
-        is not None
-    ):
+        tekstas = rezultatas["tekstas"]
 
-        st.write(
-            "Modelio patikimumo rodiklis: "
-            f"**{rezultatas['transkripcijos_patikimumas']:.2%}**"
-        )
+        if tekstas.strip():
 
-    st.write(
-        f"Garso trukmė: "
-        f"**{rezultatas['trukme']:.1f} s**"
-    )
+            st.text_area(
+                "Transkribuotas tekstas",
+                value=tekstas,
+                height=400,
+                key=f"text_{download_key}"
+            )
 
-    st.write(
-        f"Transkribavimo laikas: "
-        f"**{rezultatas['apdorojimo_laikas']:.1f} s**"
-    )
+            st.download_button(
+                "Atsisiųsti tekstą",
+                data=tekstas,
+                file_name=(
+                    f"transkriptas_"
+                    f"{download_key}.txt"
+                ),
+                mime="text/plain",
+                key=f"download_{download_key}"
+            )
 
-    tekstas = rezultatas["tekstas"]
+        else:
 
-    if tekstas.strip():
-
-        st.text_area(
-            "Transkribuotas tekstas",
-            value=tekstas,
-            height=400,
-            key=f"text_{download_key}"
-        )
-
-        st.download_button(
-            "Atsisiųsti tekstą",
-            data=tekstas,
-            file_name=(
-                f"transkriptas_"
-                f"{download_key}.txt"
-            ),
-            mime="text/plain",
-            key=f"download_{download_key}"
-        )
-
-    else:
-
-        st.warning(
-            "Modelis apdorojo failą, "
-            "bet neatpažino teksto."
-        )
+            st.warning(
+                "Modelis apdorojo failą, "
+                "bet neatpažino teksto."
+            )
 
 
 # ==================================================
