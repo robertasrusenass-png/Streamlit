@@ -4,9 +4,6 @@ import os
 import tempfile
 import time
 
-from faster_whisper import WhisperModel
-
-
 # ==================================================
 # PUSLAPIS
 # ==================================================
@@ -166,11 +163,13 @@ def deepgram_garso_i_teksta(audio_file, kalba):
 @st.cache_resource
 def uzkrauti_whisper_modeli():
 
+    from faster_whisper import WhisperModel
+
     return WhisperModel(
-    "small",
-    device="cpu",
-    compute_type="int8"
-)
+        "small",
+        device="cpu",
+        compute_type="int8"
+    )
 
 
 def whisper_garso_i_teksta(
