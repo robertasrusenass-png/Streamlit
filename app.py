@@ -18,7 +18,6 @@ pasirinkta_kalba = st.selectbox(
 )
 
 
-
 def garso_i_teksta(audio_file, kalba):
 
     url = "https://api.deepgram.com/v1/listen"
@@ -28,13 +27,17 @@ def garso_i_teksta(audio_file, kalba):
             ("model", "nova-3-general"),
             ("detect_language", "lt"),
             ("detect_language", "ru"),
-            ("smart_format", "true")
+            ("smart_format", "true"),
+            ("diarize_model", "latest"),
+            ("utterances", "true")
         ]
     else:
         params = {
             "model": "nova-3-general",
             "language": kalba,
-            "smart_format": "true"
+            "smart_format": "true",
+            "diarize_model": "latest",
+            "utterances": "true"
         }
 
     headers = {
@@ -59,7 +62,15 @@ def garso_i_teksta(audio_file, kalba):
 
     channel = rezultatas["results"]["channels"][0]
 
-    tekstas = channel["alternatives"][0]["transcript"]
+    alternative = channel["alternatives"][0]
+
+    tekstas = alternative.get("transcript", "")
+
+    # Tikras transkripcijos confidence
+    transkripcijos_patikimumas = alternative.get(
+        "confidence",
+        0
+    )
 
     aptikta_kalba = channel.get(
             "detected_language",
@@ -79,7 +90,7 @@ def garso_i_teksta(audio_file, kalba):
         0
     )
 
-    return tekstas, aptikta_kalba, kalbos_patimumas, trukme
+    return tekstas, aptikta_kalba, kalbos_patimumas, transkripcijos_patikimumas, trukme
 
 
 ikeltas_garso_failas = st.file_uploader(
