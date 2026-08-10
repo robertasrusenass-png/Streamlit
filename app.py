@@ -270,6 +270,6 @@ if "tekstas" in st.session_state:
     st.download_button(
         "Atsisiųsti tekstą",
         data=st.session_state["tekstas"],
-        file_name="transkriptas.txt",
+        file_name="transkriptas.docx",
         mime="text/plain"
     )
